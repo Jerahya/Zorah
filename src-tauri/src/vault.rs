@@ -17,6 +17,8 @@ pub struct CustomField {
     pub field_type: String,
 }
 
+fn default_icon_type() -> String { "default".to_string() }
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Credential {
     pub id: String,
@@ -27,6 +29,8 @@ pub struct Credential {
     pub updated_at: String,
     #[serde(default)]
     pub custom_fields: Vec<CustomField>,
+    #[serde(default = "default_icon_type")]
+    pub icon_type: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -131,8 +135,8 @@ pub fn load_vault(app: &tauri::AppHandle, password: &str) -> Result<Vault, Strin
         });
     }
 
-    let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let encrypted: EncryptedVault = serde_json::from_str(&data).map_err(|e| e.to_string())?;
+    let data = fs::read(&path).map_err(|e| e.to_string())?;
+    let encrypted = EncryptedVault::from_bytes(&data)?;
     let plaintext = decrypt_vault(&encrypted, password)?;
     serde_json::from_slice(&plaintext).map_err(|e| e.to_string())
 }
@@ -144,8 +148,14 @@ pub fn write_vault(app: &tauri::AppHandle, vault: &Vault, password: &str) -> Res
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
 
+    let prev_revision = fs::read(&path)
+        .ok()
+        .and_then(|data| EncryptedVault::from_bytes(&data).ok())
+        .map(|e| e.revision)
+        .unwrap_or(0);
+
     let plaintext = serde_json::to_vec(vault).map_err(|e| e.to_string())?;
-    let encrypted = encrypt_vault(&plaintext, password)?;
-    let data = serde_json::to_string_pretty(&encrypted).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| e.to_string())
+    let mut encrypted = encrypt_vault(&plaintext, password)?;
+    encrypted.revision = prev_revision + 1;
+    fs::write(&path, encrypted.to_bytes()).map_err(|e| e.to_string())
 }

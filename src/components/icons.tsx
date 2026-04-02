@@ -1,3 +1,84 @@
+// ── Credential type icons ────────────────────────────────────────────────────
+
+const S = (p: { size: number; children: React.ReactNode }) => (
+  <svg width={p.size} height={p.size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {p.children}
+  </svg>
+);
+
+function IconDefault({ size }: { size: number }) {
+  return <S size={size}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></S>;
+}
+function IconWeb({ size }: { size: number }) {
+  return <S size={size}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></S>;
+}
+function IconRdp({ size }: { size: number }) {
+  return <S size={size}><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></S>;
+}
+function IconCard({ size }: { size: number }) {
+  return <S size={size}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="6" y1="15" x2="9" y2="15"/></S>;
+}
+function IconEmail({ size }: { size: number }) {
+  return <S size={size}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></S>;
+}
+function IconWifi({ size }: { size: number }) {
+  return <S size={size}><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></S>;
+}
+function IconDatabase({ size }: { size: number }) {
+  return <S size={size}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></S>;
+}
+function IconServer({ size }: { size: number }) {
+  return <S size={size}><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></S>;
+}
+function IconApi({ size }: { size: number }) {
+  return <S size={size}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></S>;
+}
+function IconSsh({ size }: { size: number }) {
+  return <S size={size}><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></S>;
+}
+function IconNote({ size }: { size: number }) {
+  return <S size={size}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></S>;
+}
+function IconIdentity({ size }: { size: number }) {
+  return <S size={size}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></S>;
+}
+
+const ICON_MAP: Record<string, (size: number) => React.ReactElement> = {
+  default:  (s) => <IconDefault  size={s} />,
+  web:      (s) => <IconWeb      size={s} />,
+  rdp:      (s) => <IconRdp      size={s} />,
+  card:     (s) => <IconCard     size={s} />,
+  email:    (s) => <IconEmail    size={s} />,
+  wifi:     (s) => <IconWifi     size={s} />,
+  database: (s) => <IconDatabase size={s} />,
+  server:   (s) => <IconServer   size={s} />,
+  api:      (s) => <IconApi      size={s} />,
+  ssh:      (s) => <IconSsh      size={s} />,
+  note:     (s) => <IconNote     size={s} />,
+  identity: (s) => <IconIdentity size={s} />,
+};
+
+export const CREDENTIAL_TYPES: { id: string; label: string }[] = [
+  { id: "default",  label: "General"        },
+  { id: "web",      label: "Web"            },
+  { id: "rdp",      label: "Remote Desktop" },
+  { id: "card",     label: "Credit Card"    },
+  { id: "email",    label: "Email"          },
+  { id: "wifi",     label: "Wi-Fi"          },
+  { id: "database", label: "Database"       },
+  { id: "server",   label: "Server"         },
+  { id: "api",      label: "API Key"        },
+  { id: "ssh",      label: "SSH"            },
+  { id: "note",     label: "Secure Note"    },
+  { id: "identity", label: "Identity"       },
+];
+
+export function CredentialTypeIcon({ type, size = 16 }: { type: string; size?: number }) {
+  return (ICON_MAP[type] ?? ICON_MAP.default)(size);
+}
+
+// ── UI icons ─────────────────────────────────────────────────────────────────
+
 export function EyeOpen({ size = 13 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

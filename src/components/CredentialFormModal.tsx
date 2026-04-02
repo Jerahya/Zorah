@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Credential, CustomField } from "../types/vault";
-import { EyeOpen, EyeOff, TrashIcon, PencilIcon, LockIcon } from "./icons";
+import { EyeOpen, EyeOff, TrashIcon, PencilIcon, LockIcon, CredentialTypeIcon, CREDENTIAL_TYPES } from "./icons";
 
 type CredentialInput = Omit<Credential, "id" | "created_at" | "updated_at">;
 
@@ -94,6 +94,8 @@ function AddFieldModal({ onAdd, onClose }: { onAdd: (type: string) => void; onCl
 
 export default function CredentialFormModal({ initial, onSubmit, onDelete, onClose }: Props) {
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [iconType, setIconType] = useState(initial?.icon_type ?? "default");
+  const [showIconPicker, setShowIconPicker] = useState(false);
   const [customFields, setCustomFields] = useState<CustomField[]>(initial?.custom_fields ?? []);
   const [fieldVisibility, setFieldVisibility] = useState<boolean[]>(
     () => (initial?.custom_fields ?? []).map(() => false)
@@ -112,7 +114,7 @@ export default function CredentialFormModal({ initial, onSubmit, onDelete, onClo
     setSaving(true);
     setError(null);
     try {
-      await onSubmit({ title, custom_fields: customFields });
+      await onSubmit({ title, icon_type: iconType, custom_fields: customFields });
     } catch (err) {
       setError(String(err));
       setSaving(false);
@@ -146,18 +148,49 @@ export default function CredentialFormModal({ initial, onSubmit, onDelete, onClo
   return (
     <>
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal modal-credential" onClick={(e) => e.stopPropagation()}>
           <h2>{initial ? "Edit Credential" : "New Credential"}</h2>
           <form onSubmit={handleSubmit}>
             <div className="modal-fields">
             <label>
               Title
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                autoFocus
-              />
+              <div className="title-row">
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  autoFocus
+                />
+                <div className="icon-picker-wrap">
+                  <button
+                    type="button"
+                    className="icon-picker-btn"
+                    onClick={() => setShowIconPicker((v) => !v)}
+                    title="Change icon"
+                  >
+                    <CredentialTypeIcon type={iconType} size={18} />
+                  </button>
+                  {showIconPicker && (
+                    <>
+                      <div className="icon-picker-backdrop" onClick={() => setShowIconPicker(false)} />
+                      <div className="icon-picker-dropdown">
+                        {CREDENTIAL_TYPES.map((ct) => (
+                          <button
+                            key={ct.id}
+                            type="button"
+                            className={`icon-picker-item${iconType === ct.id ? " selected" : ""}`}
+                            onClick={() => { setIconType(ct.id); setShowIconPicker(false); }}
+                            title={ct.label}
+                          >
+                            <CredentialTypeIcon type={ct.id} size={18} />
+                            <span>{ct.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </label>
 
             {customFields.length > 0 && (

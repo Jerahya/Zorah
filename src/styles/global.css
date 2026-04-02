@@ -507,7 +507,14 @@ textarea {
 .card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+}
+
+.card-type-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
 }
 
 .card-title {
@@ -750,6 +757,92 @@ textarea {
   margin-left: auto;
 }
 
+/* ── Icon picker ─────────────────────────────────────── */
+
+.title-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.title-row input {
+  flex: 1;
+}
+
+.icon-picker-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.icon-picker-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.icon-picker-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.icon-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+}
+
+.icon-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: 220px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.icon-picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.icon-picker-item:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.icon-picker-item.selected {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  color: var(--accent);
+}
+
 .modal-actions button[type="submit"] {
   background: var(--accent);
   color: #fff;
@@ -757,6 +850,12 @@ textarea {
 
 .modal-actions button[type="submit"]:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+/* ── Credential modal variant ───────────────────────── */
+
+.modal-credential {
+  min-height: 500px;
 }
 
 /* ── Small modal variant ─────────────────────────────── */

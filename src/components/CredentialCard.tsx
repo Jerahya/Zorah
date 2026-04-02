@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Credential, CustomField } from "../types/vault";
-import { CopyIcon, EyeOpen, EyeOff, ExternalLinkIcon, ChevronDown, ChevronUp } from "./icons";
+import { CopyIcon, EyeOpen, EyeOff, ExternalLinkIcon, ChevronDown, ChevronUp, CredentialTypeIcon } from "./icons";
 
 interface Props {
   credential: Credential;
@@ -104,6 +104,9 @@ export default function CredentialCard({ credential, onEdit, dragHandle }: Props
     <div className="credential-card">
       <div className="card-header">
         {dragHandle}
+        <span className="card-type-icon">
+          <CredentialTypeIcon type={credential.icon_type ?? "default"} size={15} />
+        </span>
         <span className="card-title">{credential.title}</span>
         <button className="btn-edit" onClick={onEdit}>Edit</button>
       </div>

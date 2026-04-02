@@ -11,6 +11,7 @@ export interface Credential {
   created_at: string;
   updated_at: string;
   custom_fields: CustomField[];
+  icon_type: string;
 }
 
 export interface VaultMetadata {
