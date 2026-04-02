@@ -24,6 +24,7 @@ export interface VaultSettings {
 
 export interface Vault {
   version: number;
+  vault_id: string;
   credentials: Credential[];
   metadata: VaultMetadata;
   settings: VaultSettings;

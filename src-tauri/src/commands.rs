@@ -5,6 +5,11 @@ use crate::vault::{load_vault, write_vault, Vault};
 use crate::{parse_shortcut, toggle_window, CurrentShortcut};
 
 #[tauri::command]
+pub fn vault_exists(app: AppHandle) -> bool {
+    crate::vault::vault_path(&app).exists()
+}
+
+#[tauri::command]
 pub fn unlock_vault(app: AppHandle, master_password: String) -> Result<Vault, String> {
     load_vault(&app, &master_password)
 }

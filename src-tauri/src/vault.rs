@@ -1,5 +1,6 @@
 use std::{fs, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
 
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
 
 use crate::crypto::{decrypt_vault, encrypt_vault, EncryptedVault};
@@ -54,9 +55,29 @@ impl Default for VaultSettings {
     }
 }
 
+fn new_vault_id() -> String {
+    let mut bytes = [0u8; 16];
+    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    // Format as xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    format!(
+        "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}",
+        u32::from_be_bytes(bytes[0..4].try_into().unwrap()),
+        u16::from_be_bytes(bytes[4..6].try_into().unwrap()),
+        u16::from_be_bytes(bytes[6..8].try_into().unwrap()),
+        u16::from_be_bytes(bytes[8..10].try_into().unwrap()),
+        {
+            let b = &bytes[10..16];
+            ((b[0] as u64) << 40) | ((b[1] as u64) << 32) | ((b[2] as u64) << 24)
+                | ((b[3] as u64) << 16) | ((b[4] as u64) << 8) | (b[5] as u64)
+        }
+    )
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Vault {
     pub version: u32,
+    #[serde(default = "new_vault_id")]
+    pub vault_id: String,
     pub credentials: Vec<Credential>,
     pub metadata: VaultMetadata,
     #[serde(default)]
@@ -127,6 +148,7 @@ pub fn load_vault(app: &tauri::AppHandle, password: &str) -> Result<Vault, Strin
     if !path.exists() {
         return Ok(Vault {
             version: VAULT_SCHEMA_VERSION,
+            vault_id: new_vault_id(),
             credentials: vec![],
             metadata: VaultMetadata {
                 last_modified: now_iso(),

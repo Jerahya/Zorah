@@ -121,6 +121,17 @@ textarea {
   font-size: 13px;
 }
 
+.new-vault-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;
@@ -194,6 +205,57 @@ textarea {
   margin-top: 10px;
 }
 
+.toast {
+  position: fixed;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  animation: toast-in 0.2s ease;
+  z-index: 1000;
+}
+
+.toast--uploaded {
+  background: rgba(108, 99, 255, 0.18);
+  color: #a89fff;
+  border: 1px solid rgba(108, 99, 255, 0.3);
+}
+
+.toast--downloaded {
+  background: rgba(52, 168, 83, 0.15);
+  color: #6fcf97;
+  border: 1px solid rgba(52, 168, 83, 0.25);
+}
+
+.toast--in_sync {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.toast--error {
+  background: rgba(224, 92, 106, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(224, 92, 106, 0.25);
+}
+
+.toast-icon {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 .app-version {
   position: fixed;
   bottom: 10px;
@@ -254,6 +316,26 @@ textarea {
 
 .btn-lock {
   background: var(--surface-2);
+}
+
+.btn-sync-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  padding: 7px 11px;
+  font-size: 13px;
+}
+
+.btn-sync-header:hover:not(:disabled) {
+  background: var(--border);
+  color: var(--text);
+}
+
+.btn-sync-header:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-settings {
@@ -411,6 +493,98 @@ textarea {
 
 .btn-save-settings:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.btn-google:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-google-connect {
+  background: #fff;
+  color: #3c3c3c;
+  border: 1px solid #dadce0;
+}
+
+.btn-google-connect:hover:not(:disabled) {
+  background: #f8f8f8;
+  border-color: #c0c0c0;
+}
+
+.btn-google-disconnect {
+  background: var(--surface-2);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-google-disconnect:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-sync {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.btn-sync:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-sync:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.sync-status--uploaded {
+  background: rgba(108, 99, 255, 0.12);
+  color: #a89fff;
+  border: 1px solid rgba(108, 99, 255, 0.25);
+}
+
+.sync-status--downloaded {
+  background: rgba(52, 168, 83, 0.1);
+  color: #6fcf97;
+  border: 1px solid rgba(52, 168, 83, 0.2);
+}
+
+.sync-status--in_sync {
+  background: rgba(139, 144, 168, 0.1);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.sync-status-icon {
+  font-size: 14px;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
 /* ── Search Bar ──────────────────────────────────────── */

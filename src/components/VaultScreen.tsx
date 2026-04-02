@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Credential, Vault, VaultSettings } from "../types/vault";
-import { ZorahLogo, GearIcon } from "./icons";
+import { ZorahLogo, GearIcon, GoogleIcon } from "./icons";
 import CredentialCard from "./CredentialCard";
 import CredentialFormModal from "./CredentialFormModal";
 import SettingsModal from "./SettingsModal";
 import SearchBar from "./SearchBar";
 import AppVersion from "./AppVersion";
+import Toast from "./Toast";
 
 type CredentialInput = Omit<Credential, "id" | "created_at" | "updated_at">;
 
@@ -22,6 +24,9 @@ interface Props {
 export default function VaultScreen({ vault, onLock, onAdd, onUpdate, onDelete, onReorder, onSaveSettings }: Props) {
   const [query, setQuery] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "uploaded" | "downloaded" | "in_sync" | "error" } | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingCred, setEditingCred] = useState<Credential | null>(null);
   const [order, setOrder] = useState<string[]>(() => vault.credentials.map((c) => c.id));
@@ -109,6 +114,25 @@ export default function VaultScreen({ vault, onLock, onAdd, onUpdate, onDelete, 
     );
   });
 
+  const refreshGoogleStatus = () => {
+    invoke<string | null>("google_auth_status").then((email) => setGoogleConnected(!!email)).catch(() => {});
+  };
+
+  useEffect(() => { refreshGoogleStatus(); }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const result = await invoke<{ action: string; message: string }>("google_drive_sync", { vaultId: vault.vault_id });
+      setToast({ message: result.message, type: result.action as "uploaded" | "downloaded" | "in_sync" });
+      if (result.action === "downloaded") onLock();
+    } catch (err) {
+      setToast({ message: String(err), type: "error" });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const openAdd = () => { setEditingCred(null); setShowModal(true); };
   const openEdit = (cred: Credential) => { setEditingCred(cred); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setEditingCred(null); };
@@ -153,6 +177,11 @@ export default function VaultScreen({ vault, onLock, onAdd, onUpdate, onDelete, 
       <header className="vault-header">
         <h1><ZorahLogo />orah Vault</h1>
         <div className="header-actions">
+          {googleConnected && (
+            <button className="btn-sync-header" onClick={handleSync} disabled={syncing} title="Sync with Google Drive">
+              {syncing ? "…" : <><GoogleIcon size={13} /> Sync</>}
+            </button>
+          )}
           <button className="btn-add" onClick={openAdd}>
             + Add
           </button>
@@ -215,9 +244,15 @@ export default function VaultScreen({ vault, onLock, onAdd, onUpdate, onDelete, 
       {showSettings && (
         <SettingsModal
           currentShortcut={vault.settings.toggle_shortcut}
+          vaultId={vault.vault_id}
           onSave={(shortcut) => onSaveSettings({ toggle_shortcut: shortcut })}
-          onClose={() => setShowSettings(false)}
+          onClose={() => { setShowSettings(false); refreshGoogleStatus(); }}
+          onVaultReplaced={onLock}
         />
+      )}
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onDismiss={() => setToast(null)} />
       )}
 
       <AppVersion />

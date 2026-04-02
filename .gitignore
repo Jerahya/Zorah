@@ -29,6 +29,9 @@ src-tauri/target/
 # Vault files — never commit credentials
 *.vault
 
+# Google OAuth credentials
+src-tauri/.env
+
 # Claude Code
 .claude/
 
