@@ -110,6 +110,8 @@ textarea {
   font-weight: 700;
   color: var(--accent);
   letter-spacing: 1px;
+  white-space: nowrap;
+  
 }
 
 .app-subtitle {
@@ -220,6 +222,7 @@ textarea {
   font-size: 20px;
   font-weight: 700;
   color: var(--accent);
+  white-space: nowrap;
 }
 
 .header-actions {
@@ -255,6 +258,42 @@ textarea {
   overflow-y: auto;
 }
 
+.draggable-card {
+  display: block;
+}
+
+.draggable-card.is-dragging {
+  opacity: 0.25;
+}
+
+.drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.9;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  rotate: 1.5deg;
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  cursor: grab;
+  font-size: 16px;
+  line-height: 1;
+  user-select: none;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.drag-handle:hover {
+  color: var(--text);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .empty-state {
   color: var(--text-muted);
   text-align: center;
@@ -276,7 +315,6 @@ textarea {
 .card-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
 }
 
@@ -292,6 +330,7 @@ textarea {
   flex-shrink: 0;
   font-size: 12px;
   padding: 4px 12px;
+  margin-left: auto;
 }
 
 .card-fields-grid {

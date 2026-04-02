@@ -11,6 +11,7 @@ export default function SearchBar({ value, onChange }: Props) {
         placeholder="Search credentials..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onContextMenu={(e) => { e.preventDefault(); onChange(""); }}
       />
     </div>
   );

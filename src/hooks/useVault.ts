@@ -77,6 +77,22 @@ export function useVault() {
     [vault, save]
   );
 
+  const reorderCredentials = useCallback(
+    async (ids: string[]) => {
+      if (!vault) return;
+      const credMap = new Map(vault.credentials.map((c) => [c.id, c]));
+      const reordered = ids.map((id) => credMap.get(id)).filter((c): c is Credential => !!c);
+      const updated: Vault = {
+        ...vault,
+        credentials: reordered,
+        metadata: { last_modified: now() },
+      };
+      await save(updated);
+      setVault(updated);
+    },
+    [vault, save]
+  );
+
   const deleteCredential = useCallback(
     async (id: string, confirmPassword: string) => {
       if (!vault) return;
@@ -104,5 +120,6 @@ export function useVault() {
     addCredential,
     updateCredential,
     deleteCredential,
+    reorderCredentials,
   };
 }

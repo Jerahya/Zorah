@@ -4,7 +4,7 @@ import VaultScreen from "./components/VaultScreen";
 import "./styles/global.css";
 
 function App() {
-  const { vault, loading, error, isLocked, unlock, lock, addCredential, updateCredential, deleteCredential } =
+  const { vault, loading, error, isLocked, unlock, lock, addCredential, updateCredential, deleteCredential, reorderCredentials } =
     useVault();
 
   return (
@@ -18,6 +18,7 @@ function App() {
           onAdd={addCredential}
           onUpdate={updateCredential}
           onDelete={deleteCredential}
+          onReorder={reorderCredentials}
         />
       )}
     </div>

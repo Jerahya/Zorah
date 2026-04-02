@@ -1,7 +1,6 @@
 use std::{fs, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
 
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
 
 use crate::crypto::{decrypt_vault, encrypt_vault, EncryptedVault};
 
