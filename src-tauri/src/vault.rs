@@ -1,0 +1,130 @@
+use std::{fs, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
+
+use serde::{Deserialize, Serialize};
+use tauri::Manager;
+
+use crate::crypto::{decrypt_vault, encrypt_vault, EncryptedVault};
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CustomField {
+    pub key: String,
+    pub value: String,
+    #[serde(default)]
+    pub secret: bool,
+    #[serde(default)]
+    pub field_type: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Credential {
+    pub id: String,
+    pub title: String,
+    #[serde(default)]
+    pub created_at: String,
+    #[serde(default)]
+    pub updated_at: String,
+    #[serde(default)]
+    pub custom_fields: Vec<CustomField>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct VaultMetadata {
+    pub last_modified: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Vault {
+    pub version: u32,
+    pub credentials: Vec<Credential>,
+    pub metadata: VaultMetadata,
+}
+
+fn now_iso() -> String {
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    // Format as a simple ISO-8601 UTC string: YYYY-MM-DDTHH:MM:SSZ
+    let s = secs;
+    let sec = s % 60;
+    let min = (s / 60) % 60;
+    let hour = (s / 3600) % 24;
+    let days = s / 86400;
+    // Days since epoch to date (Gregorian)
+    let (year, month, day) = days_to_ymd(days);
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        year, month, day, hour, min, sec
+    )
+}
+
+fn days_to_ymd(mut days: u64) -> (u64, u64, u64) {
+    // Gregorian calendar calculation from days since 1970-01-01
+    let mut year = 1970u64;
+    loop {
+        let dy = if is_leap(year) { 366 } else { 365 };
+        if days < dy {
+            break;
+        }
+        days -= dy;
+        year += 1;
+    }
+    let months = if is_leap(year) {
+        [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    } else {
+        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    };
+    let mut month = 1u64;
+    for &dm in &months {
+        if days < dm {
+            break;
+        }
+        days -= dm;
+        month += 1;
+    }
+    (year, month, days + 1)
+}
+
+fn is_leap(y: u64) -> bool {
+    (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)
+}
+
+pub fn vault_path(_app: &tauri::AppHandle) -> PathBuf {
+    std::env::current_exe()
+        .expect("failed to resolve executable path")
+        .parent()
+        .expect("failed to resolve executable directory")
+        .join("zorah.vault")
+}
+
+pub fn load_vault(app: &tauri::AppHandle, password: &str) -> Result<Vault, String> {
+    let path = vault_path(app);
+
+    if !path.exists() {
+        return Ok(Vault {
+            version: 1,
+            credentials: vec![],
+            metadata: VaultMetadata {
+                last_modified: now_iso(),
+            },
+        });
+    }
+
+    let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let encrypted: EncryptedVault = serde_json::from_str(&data).map_err(|e| e.to_string())?;
+    let plaintext = decrypt_vault(&encrypted, password)?;
+    serde_json::from_slice(&plaintext).map_err(|e| e.to_string())
+}
+
+pub fn write_vault(app: &tauri::AppHandle, vault: &Vault, password: &str) -> Result<(), String> {
+    let path = vault_path(app);
+
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+
+    let plaintext = serde_json::to_vec(vault).map_err(|e| e.to_string())?;
+    let encrypted = encrypt_vault(&plaintext, password)?;
+    let data = serde_json::to_string_pretty(&encrypted).map_err(|e| e.to_string())?;
+    fs::write(&path, data).map_err(|e| e.to_string())
+}

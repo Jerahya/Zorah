@@ -1,0 +1,748 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface-2: #232635;
+  --border: #2e3249;
+  --text: #e8eaf0;
+  --text-muted: #8b90a8;
+  --accent: #6c63ff;
+  --accent-hover: #7d75ff;
+  --danger: #e05c6a;
+  --danger-hover: #f06c7a;
+  --eye-color: #4a445d;
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-family: var(--font);
+  background: var(--surface-2);
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+button:hover:not(:disabled) {
+  background: var(--border);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Inputs ──────────────────────────────────────────── */
+
+input, textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* ── Login Screen ────────────────────────────────────── */
+
+.login-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-box {
+  width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.app-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+.app-subtitle {
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-bottom: 28px;
+  font-size: 13px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-form button {
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  padding: 10px;
+}
+
+.login-form button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 40px;
+}
+
+.password-field input::-ms-reveal,
+.password-field input::-ms-clear {
+  display: none;
+}
+
+.password-field input::-webkit-credentials-auto-fill-button,
+.password-field input::-webkit-textfield-decoration-container {
+  display: none;
+}
+
+.btn-eye {
+  position: absolute;
+  right: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none !important;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--eye-color) !important;
+}
+
+.btn-eye svg {
+  width: 20px;
+  height: 20px;
+}
+
+.btn-eye:hover,
+.btn-eye:focus {
+  background: none !important;
+  color: var(--eye-color) !important;
+  outline: none;
+}
+
+.btn-eye-margin {
+  margin-right: 8px;
+}
+
+/* ── Error message ───────────────────────────────────── */
+
+.error-msg {
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+/* ── Vault Screen ────────────────────────────────────── */
+
+.vault-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 16px 24px;
+}
+
+.vault-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.vault-header h1 {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-add {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-add:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-lock {
+  background: var(--surface-2);
+}
+
+/* ── Search Bar ──────────────────────────────────────── */
+
+.search-bar {
+  margin-bottom: 16px;
+}
+
+/* ── Credential List ─────────────────────────────────── */
+
+.credential-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 48px;
+}
+
+/* ── Credential Card ─────────────────────────────────── */
+
+.credential-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-edit {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
+.card-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 48px;
+}
+
+.card-field-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.card-field-key {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.card-field-value-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.card-field-value {
+  font-size: 13px;
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.card-field-empty {
+  color: var(--text-muted);
+  font-family: var(--font);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-family: monospace;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.btn-link:hover {
+  background: none;
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.reveal-timer {
+  font-size: 10px;
+  font-family: var(--font);
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.btn-copy {
+  background: none;
+  border: none;
+  padding: 2px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-copy:hover {
+  background: none;
+  color: var(--text);
+}
+
+.copied-label {
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.btn-more {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-more:hover {
+  background: none;
+  color: var(--accent-hover);
+}
+
+.btn-delete {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* ── Modal ───────────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px 20px;
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.modal form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+.modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
+  flex: 1;
+}
+
+.modal-fields::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-fields::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-fields::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.modal-fields::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.modal label input,
+.modal label textarea {
+  color: var(--text);
+}
+
+.notes-toggle {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+  cursor: pointer;
+}
+
+.notes-toggle input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.modal-actions button[type="submit"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.modal-actions button[type="submit"]:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+/* ── Small modal variant ─────────────────────────────── */
+
+.modal-sm {
+  width: 300px;
+}
+
+.label-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 12px !important;
+}
+
+.label-row select {
+  flex: 1;
+}
+
+.modal-sm select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  padding: 9px 32px 9px 12px;
+  outline: none;
+  margin-top: 5px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b90a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.modal-sm select:focus {
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+/* ── Custom fields in modal ──────────────────────────── */
+
+.custom-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.custom-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.custom-field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.custom-field-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-left: 2px;
+}
+
+.custom-field-label-edit {
+  font-size: 12px;
+  padding: 3px 8px;
+  width: auto;
+}
+
+.custom-field-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-field-value {
+  flex: 1;
+  position: relative;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-icon:hover {
+  background: none;
+  color: var(--text);
+}
+
+.btn-lock-field {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.btn-lock-field:hover {
+  background: none;
+  color: var(--text);
+}
+
+.btn-lock-field.active {
+  color: var(--accent);
+}
+
+.btn-lock-field::after {
+  content: "Hidden";
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.btn-lock-field:hover::after {
+  opacity: 1;
+}
+
+.btn-remove-field {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.btn-remove-field:hover {
+  background: none;
+  color: var(--danger);
+}
+
+.btn-add-field {
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 5px 10px;
+}
+
+.btn-add-field:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: none;
+}
+
+/* ── Custom fields on card ───────────────────────────── */
+
+.card-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.card-field-key {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.card-field-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-field-value {
+  font-size: 13px;
+  font-family: monospace;
+}
+
+/* ── Delete section in modal ─────────────────────────── */
+
+.delete-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.delete-confirm-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
