@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
 import { ZorahLogo } from "./icons";
 import { EyeOpen, EyeOff } from "./icons";
+import AppVersion from "./AppVersion";
 
 interface Props {
   onUnlock: (password: string) => void;
@@ -48,6 +49,7 @@ export default function LoginScreen({ onUnlock, loading, error }: Props) {
         </form>
         {error && <p className="error-msg">{error}</p>}
       </div>
+      <AppVersion />
     </div>
   );
 }

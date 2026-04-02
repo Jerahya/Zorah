@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Credential, Vault } from "../types/vault";
-import { ZorahLogo } from "./icons";
+import { Credential, Vault, VaultSettings } from "../types/vault";
+import { ZorahLogo, GearIcon } from "./icons";
 import CredentialCard from "./CredentialCard";
 import CredentialFormModal from "./CredentialFormModal";
+import SettingsModal from "./SettingsModal";
 import SearchBar from "./SearchBar";
+import AppVersion from "./AppVersion";
 
 type CredentialInput = Omit<Credential, "id" | "created_at" | "updated_at">;
 
@@ -14,10 +16,12 @@ interface Props {
   onUpdate: (id: string, data: Partial<CredentialInput>) => Promise<void>;
   onDelete: (id: string, confirmPassword: string) => Promise<void>;
   onReorder: (ids: string[]) => Promise<void>;
+  onSaveSettings: (settings: VaultSettings) => Promise<void>;
 }
 
-export default function VaultScreen({ vault, onLock, onAdd, onUpdate, onDelete, onReorder }: Props) {
+export default function VaultScreen({ vault, onLock, onAdd, onUpdate, onDelete, onReorder, onSaveSettings }: Props) {
   const [query, setQuery] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingCred, setEditingCred] = useState<Credential | null>(null);
   const [order, setOrder] = useState<string[]>(() => vault.credentials.map((c) => c.id));
@@ -155,6 +159,9 @@ export default function VaultScreen({ vault, onLock, onAdd, onUpdate, onDelete, 
           <button className="btn-lock" onClick={onLock}>
             Lock
           </button>
+          <button className="btn-settings" onClick={() => setShowSettings(true)} title="Settings">
+            <GearIcon />
+          </button>
         </div>
       </header>
 
@@ -204,6 +211,16 @@ export default function VaultScreen({ vault, onLock, onAdd, onUpdate, onDelete, 
           onClose={closeModal}
         />
       )}
+
+      {showSettings && (
+        <SettingsModal
+          currentShortcut={vault.settings.toggle_shortcut}
+          onSave={(shortcut) => onSaveSettings({ toggle_shortcut: shortcut })}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      <AppVersion />
     </div>
   );
 }

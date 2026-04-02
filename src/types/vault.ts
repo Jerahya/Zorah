@@ -17,8 +17,13 @@ export interface VaultMetadata {
   last_modified: string;
 }
 
+export interface VaultSettings {
+  toggle_shortcut: string;
+}
+
 export interface Vault {
   version: number;
   credentials: Credential[];
   metadata: VaultMetadata;
+  settings: VaultSettings;
 }

@@ -1,6 +1,6 @@
 [package]
 name = "zorah"
-version = "0.1.0"
+version = "0.2.0"
 description = "Zorah Password Manager"
 authors = []
 edition = "2021"

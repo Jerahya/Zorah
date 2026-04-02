@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::crypto::{decrypt_vault, encrypt_vault, EncryptedVault};
 
+/// Bump this when the vault file format changes in a breaking way.
+pub const VAULT_SCHEMA_VERSION: u32 = 1;
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct CustomField {
     pub key: String,
@@ -32,10 +35,28 @@ pub struct VaultMetadata {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct VaultSettings {
+    #[serde(default = "default_toggle_shortcut")]
+    pub toggle_shortcut: String,
+}
+
+fn default_toggle_shortcut() -> String {
+    "Alt+Shift+P".to_string()
+}
+
+impl Default for VaultSettings {
+    fn default() -> Self {
+        Self { toggle_shortcut: default_toggle_shortcut() }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Vault {
     pub version: u32,
     pub credentials: Vec<Credential>,
     pub metadata: VaultMetadata,
+    #[serde(default)]
+    pub settings: VaultSettings,
 }
 
 fn now_iso() -> String {
@@ -101,11 +122,12 @@ pub fn load_vault(app: &tauri::AppHandle, password: &str) -> Result<Vault, Strin
 
     if !path.exists() {
         return Ok(Vault {
-            version: 1,
+            version: VAULT_SCHEMA_VERSION,
             credentials: vec![],
             metadata: VaultMetadata {
                 last_modified: now_iso(),
             },
+            settings: VaultSettings::default(),
         });
     }
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Credential, Vault } from "../types/vault";
+import { Credential, Vault, VaultSettings } from "../types/vault";
 
 type CredentialInput = Omit<Credential, "id" | "created_at" | "updated_at">;
 
@@ -21,6 +21,7 @@ export function useVault() {
       const v = await invoke<Vault>("unlock_vault", { masterPassword: password });
       setVault(v);
       setMasterPassword(password);
+      invoke("set_toggle_shortcut", { shortcutStr: v.settings.toggle_shortcut }).catch(() => {});
     } catch (e) {
       setError(String(e));
     } finally {
@@ -93,6 +94,17 @@ export function useVault() {
     [vault, save]
   );
 
+  const saveSettings = useCallback(
+    async (settings: VaultSettings) => {
+      if (!vault) return;
+      const updated: Vault = { ...vault, settings };
+      await save(updated);
+      setVault(updated);
+      await invoke("set_toggle_shortcut", { shortcutStr: settings.toggle_shortcut });
+    },
+    [vault, save]
+  );
+
   const deleteCredential = useCallback(
     async (id: string, confirmPassword: string) => {
       if (!vault) return;
@@ -121,5 +133,6 @@ export function useVault() {
     updateCredential,
     deleteCredential,
     reorderCredentials,
+    saveSettings,
   };
 }
