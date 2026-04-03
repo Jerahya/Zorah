@@ -1,7 +1,8 @@
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ZorahLogo, EyeOpen, EyeOff } from "./icons";
+import { ZorahLogo, EyeOpen, EyeOff, ImportIcon, GoogleIcon } from "./icons";
 import AppVersion from "./AppVersion";
+import ImportFromDriveModal from "./ImportFromDriveModal";
 
 interface Props {
   onUnlock: (password: string) => void;
@@ -13,19 +14,72 @@ export default function LoginScreen({ onUnlock, loading, error }: Props) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isNewVault, setIsNewVault] = useState<boolean | null>(null);
+  const [showImportMenu, setShowImportMenu] = useState(false);
+  const [showDriveModal, setShowDriveModal] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    invoke<boolean>("vault_exists").then((exists) => setIsNewVault(!exists)).catch(() => setIsNewVault(false));
+    invoke<boolean>("vault_exists")
+      .then((exists) => setIsNewVault(!exists))
+      .catch(() => setIsNewVault(false));
   }, []);
 
-  const handleSubmit = (e: FormEvent) => {
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowImportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (password) onUnlock(password);
   };
 
-  
+  const handleImportFromFile = async () => {
+    setShowImportMenu(false);
+    try {
+      const imported = await invoke<boolean>("pick_and_import_vault");
+      if (imported) setIsNewVault(false);
+    } catch {
+      // user cancelled — ignore
+    }
+  };
+
+  const handleImportFromDrive = () => {
+    setShowImportMenu(false);
+    setShowDriveModal(true);
+  };
+
   return (
     <div className="login-screen">
+
+      {/* Top-right import button */}
+      <div className="login-import-wrap" ref={menuRef}>
+        <button
+          className="btn-login-import"
+          onClick={() => setShowImportMenu((v) => !v)}
+          title="Import vault"
+        >
+          <ImportIcon size={14} />
+          Import
+        </button>
+
+        {showImportMenu && (
+          <div className="login-import-menu">
+            <button className="login-import-item" onClick={handleImportFromFile}>
+              <span>📁</span> From file
+            </button>
+            <button className="login-import-item" onClick={handleImportFromDrive}>
+              <GoogleIcon size={13} /> From Google Drive
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="login-box">
         <h1 className="app-title"><ZorahLogo />orah Vault</h1>
         <p className="app-subtitle">Password Manager</p>
@@ -54,14 +108,24 @@ export default function LoginScreen({ onUnlock, loading, error }: Props) {
               {showPassword ? <EyeOff size={16} /> : <EyeOpen size={16} />}
             </button>
           </div>
+
           <button type="submit" disabled={loading || !password}>
             {loading
               ? (isNewVault ? "Creating…" : "Unlocking…")
               : (isNewVault ? "Create New Vault" : "Unlock Vault")}
           </button>
         </form>
+
         {error && <p className="error-msg">{error}</p>}
       </div>
+
+      {showDriveModal && (
+        <ImportFromDriveModal
+          onImported={() => { setShowDriveModal(false); setIsNewVault(false); }}
+          onClose={() => setShowDriveModal(false)}
+        />
+      )}
+
       <AppVersion />
     </div>
   );

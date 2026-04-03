@@ -1,12 +1,42 @@
 use tauri::{AppHandle, Manager};
+use rfd;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 use crate::vault::{load_vault, write_vault, Vault};
 use crate::{parse_shortcut, toggle_window, CurrentShortcut};
 
 #[tauri::command]
+pub async fn pick_and_import_vault(app: AppHandle) -> Result<bool, String> {
+    let handle = rfd::AsyncFileDialog::new()
+        .add_filter("Zorah Vault", &["vault"])
+        .set_title("Select a Zorah vault file")
+        .pick_file()
+        .await;
+
+    let file = match handle {
+        None => return Ok(false),
+        Some(f) => f,
+    };
+
+    let data = file.read().await;
+    // Validate it's a real vault before overwriting
+    crate::crypto::EncryptedVault::from_bytes(&data)?;
+    std::fs::write(crate::vault::vault_path(&app), data).map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+#[tauri::command]
 pub fn vault_exists(app: AppHandle) -> bool {
     crate::vault::vault_path(&app).exists()
+}
+
+#[tauri::command]
+pub fn get_vault_dir(app: AppHandle) -> String {
+    crate::vault::vault_path(&app)
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new(""))
+        .to_string_lossy()
+        .to_string()
 }
 
 #[tauri::command]

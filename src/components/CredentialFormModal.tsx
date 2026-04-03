@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Credential, CustomField } from "../types/vault";
 import { EyeOpen, EyeOff, TrashIcon, PencilIcon, LockIcon, CredentialTypeIcon, CREDENTIAL_TYPES } from "./icons";
 
@@ -109,6 +109,87 @@ export default function CredentialFormModal({ initial, onSubmit, onDelete, onClo
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Drag-and-drop for field reordering
+  const [draggingFieldIdx, setDraggingFieldIdx] = useState<number | null>(null);
+  const dragFieldIdx = useRef<number | null>(null);
+  const dragFieldOffset = useRef({ x: 0, y: 0 });
+  const fieldGhostRef = useRef<HTMLDivElement>(null);
+  const fieldsListRef = useRef<HTMLDivElement>(null);
+  const fieldsOrderRef = useRef(customFields);
+  fieldsOrderRef.current = customFields;
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (dragFieldIdx.current === null || !fieldsListRef.current) return;
+      if (fieldGhostRef.current) {
+        fieldGhostRef.current.style.left = (e.clientX - dragFieldOffset.current.x) + "px";
+        fieldGhostRef.current.style.top  = (e.clientY - dragFieldOffset.current.y) + "px";
+      }
+      const rows = fieldsListRef.current.querySelectorAll<HTMLElement>("[data-fieldidx]");
+      let targetIdx: number | null = null;
+      for (const row of rows) {
+        const rect = row.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) {
+          targetIdx = Number(row.dataset.fieldidx);
+          break;
+        }
+      }
+      if (targetIdx === null && rows.length > 0) {
+        targetIdx = Number(rows[rows.length - 1].dataset.fieldidx);
+      }
+      if (targetIdx === null || targetIdx === dragFieldIdx.current) return;
+      const from = dragFieldIdx.current;
+      const to   = targetIdx;
+      dragFieldIdx.current = to;
+      setDraggingFieldIdx(to);
+      setCustomFields((prev) => {
+        const next = [...prev];
+        const [field] = next.splice(from, 1);
+        next.splice(to, 0, field);
+        return next;
+      });
+      setFieldVisibility((prev) => {
+        const next = [...prev];
+        const [vis] = next.splice(from, 1);
+        next.splice(to, 0, vis);
+        return next;
+      });
+    };
+
+    const onUp = () => {
+      if (dragFieldIdx.current === null) return;
+      dragFieldIdx.current = null;
+      setDraggingFieldIdx(null);
+      if (fieldGhostRef.current) fieldGhostRef.current.style.display = "none";
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onUp);
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
+    };
+  }, []);
+
+  const handleFieldPointerDown = (e: React.PointerEvent, idx: number) => {
+    e.preventDefault();
+    const row = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-fieldidx]");
+    if (row) {
+      const rect = row.getBoundingClientRect();
+      dragFieldOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      if (fieldGhostRef.current) {
+        fieldGhostRef.current.style.width   = rect.width + "px";
+        fieldGhostRef.current.style.left    = rect.left + "px";
+        fieldGhostRef.current.style.top     = rect.top + "px";
+        fieldGhostRef.current.style.display = "block";
+      }
+    }
+    dragFieldIdx.current = idx;
+    setDraggingFieldIdx(idx);
+  };
+
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setSaving(true);
@@ -194,9 +275,9 @@ export default function CredentialFormModal({ initial, onSubmit, onDelete, onClo
             </label>
 
             {customFields.length > 0 && (
-              <div className="custom-fields">
+              <div className="custom-fields" ref={fieldsListRef}>
                 {customFields.map((field, i) => (
-                  <div key={i} className="custom-field">
+                  <div key={i} data-fieldidx={i} className={`custom-field${draggingFieldIdx === i ? " is-dragging" : ""}`}>
                     <div className="custom-field-label-row">
                       {editingLabelIdx === i ? (
                         <input
@@ -224,6 +305,11 @@ export default function CredentialFormModal({ initial, onSubmit, onDelete, onClo
                       )}
                     </div>
                     <div className="custom-field-controls">
+                      <div
+                        className="drag-handle"
+                        title="Drag to reorder"
+                        onPointerDown={(e) => handleFieldPointerDown(e, i)}
+                      >⠿</div>
                       <div className="password-field custom-field-value">
                         <input
                           type={field.secret && !fieldVisibility[i] ? "password" : "text"}
@@ -292,6 +378,21 @@ export default function CredentialFormModal({ initial, onSubmit, onDelete, onClo
             </div>
           </form>
         </div>
+      </div>
+
+      <div ref={fieldGhostRef} className="drag-ghost" style={{ display: "none" }}>
+        {draggingFieldIdx !== null && customFields[draggingFieldIdx] && (
+          <div className="custom-field custom-field-ghost">
+            <div className="custom-field-label-row">
+              <span className="custom-field-label">{customFields[draggingFieldIdx].key}</span>
+            </div>
+            <div className="custom-field-controls">
+              <div className="password-field custom-field-value">
+                <input type="password" value={customFields[draggingFieldIdx].value} readOnly />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {showAddModal && (

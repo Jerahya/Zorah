@@ -1,4 +1,5 @@
 use std::{fs, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
+use tauri::Manager;
 
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -134,12 +135,31 @@ fn is_leap(y: u64) -> bool {
     (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)
 }
 
-pub fn vault_path(_app: &tauri::AppHandle) -> PathBuf {
-    std::env::current_exe()
-        .expect("failed to resolve executable path")
-        .parent()
-        .expect("failed to resolve executable directory")
-        .join("zorah.vault")
+/// Returns the exe directory if writable (portable mode), otherwise None.
+fn portable_dir() -> Option<PathBuf> {
+    let dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
+    let probe = dir.join(".zorah_write_probe");
+    if fs::write(&probe, b"").is_ok() {
+        let _ = fs::remove_file(&probe);
+        Some(dir)
+    } else {
+        None
+    }
+}
+
+pub fn vault_path(app: &tauri::AppHandle) -> PathBuf {
+    let dir = match portable_dir() {
+        Some(exe_dir) => exe_dir.join("Vault"),
+        None => app.path().app_data_dir()
+            .expect("failed to resolve app data directory")
+            .join("Vault"),
+    };
+
+    if !dir.exists() {
+        fs::create_dir_all(&dir).expect("failed to create Vault directory");
+    }
+
+    dir.join("zorah.vault")
 }
 
 pub fn load_vault(app: &tauri::AppHandle, password: &str) -> Result<Vault, String> {

@@ -35,6 +35,13 @@ export default function SettingsModal({ currentShortcut, vaultId, onSave, onClos
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Vault storage location
+  const [vaultDir, setVaultDir] = useState<string>("");
+
+  useEffect(() => {
+    invoke<string>("get_vault_dir").then(setVaultDir).catch(() => {});
+  }, []);
+
   // Google auth state
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -150,6 +157,16 @@ export default function SettingsModal({ currentShortcut, vaultId, onSave, onClos
               {hasChanges && !recording && (
                 <button className="btn-revert" onClick={() => setPending(currentShortcut)} title="Revert to saved">↩</button>
               )}
+            </div>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">Storage</div>
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <span className="settings-row-label">Vault directory</span>
+              <span className="settings-row-desc vault-dir-path" title={vaultDir}>{vaultDir || "—"}</span>
             </div>
           </div>
         </div>

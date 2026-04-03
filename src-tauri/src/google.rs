@@ -18,7 +18,7 @@ use tauri_plugin_opener::OpenerExt;
 pub const CLIENT_ID: &str = env!("GOOGLE_CLIENT_ID");
 pub const CLIENT_SECRET: &str = env!("GOOGLE_CLIENT_SECRET");
 
-const SCOPES: &str = "https://www.googleapis.com/auth/drive.appdata email profile";
+const SCOPES: &str = env!("GOOGLE_SCOPES");
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,31 +33,90 @@ pub struct StoredTokens {
 pub struct GoogleAuthState(pub Mutex<Option<StoredTokens>>);
 
 // ── Token persistence ─────────────────────────────────────────────────────────
+const AUTH_KEY_MATERIAL: &[u8] = env!("AUTH_KEY_MATERIAL").as_bytes();
 
-fn token_path() -> PathBuf {
-    std::env::current_exe()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("zorah.gauth")
+fn auth_path(app: &AppHandle) -> PathBuf {
+    // Mirror vault_path: portable if exe dir is writable, else AppData
+    let dir = {
+        let probe_dir = std::env::current_exe()
+            .ok().and_then(|p| p.parent().map(|d| d.to_path_buf()));
+        let portable = probe_dir.and_then(|dir| {
+            let probe = dir.join(".zorah_write_probe");
+            if fs::write(&probe, b"").is_ok() {
+                let _ = fs::remove_file(&probe);
+                Some(dir)
+            } else {
+                None
+            }
+        });
+        match portable {
+            Some(exe_dir) => exe_dir,
+            None => {
+                let d = app.path().app_data_dir()
+                    .expect("failed to resolve app data directory");
+                if !d.exists() { let _ = fs::create_dir_all(&d); }
+                d
+            }
+        }
+    };
+    dir.join("zorah.gauth")
 }
 
-pub fn load_tokens() -> Option<StoredTokens> {
-    fs::read_to_string(token_path())
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok())
+fn derive_auth_key() -> [u8; 32] {
+    use sha2::{Digest, Sha256};
+    let mut h = Sha256::new();
+    h.update(AUTH_KEY_MATERIAL);
+    h.finalize().into()
 }
 
-fn save_tokens(tokens: &StoredTokens) -> Result<(), String> {
-    fs::write(
-        token_path(),
-        serde_json::to_string(tokens).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())
+fn encrypt_auth(plaintext: &[u8]) -> Vec<u8> {
+    use aes_gcm::{aead::{Aead, KeyInit}, Aes256Gcm, Key, Nonce};
+    use rand::RngCore;
+    let key    = derive_auth_key();
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
+    let mut nonce_bytes = [0u8; 12];
+    rand::rngs::OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    let mut out = nonce_bytes.to_vec();
+    out.extend_from_slice(&cipher.encrypt(nonce, plaintext).unwrap());
+    out
 }
 
-pub fn delete_tokens() {
-    let _ = fs::remove_file(token_path());
+fn decrypt_auth(data: &[u8]) -> Option<Vec<u8>> {
+    use aes_gcm::{aead::{Aead, KeyInit}, Aes256Gcm, Key, Nonce};
+    if data.len() < 13 { return None; }
+    let key    = derive_auth_key();
+    let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&key));
+    let nonce  = Nonce::from_slice(&data[..12]);
+    cipher.decrypt(nonce, &data[12..]).ok()
+}
+
+pub fn load_tokens(app: &AppHandle) -> Option<StoredTokens> {
+    let dest = auth_path(app);
+
+    if !dest.exists() {
+        let old = std::env::current_exe().ok()
+            .and_then(|p| p.parent().map(|d| d.join("zorah.gauth")));
+        if let Some(old) = old.filter(|p| p.exists()) {
+            if fs::copy(&old, &dest).is_ok() {
+                let _ = fs::remove_file(&old);
+            }
+        }
+    }
+
+    let data      = fs::read(&dest).ok()?;
+    let plaintext = decrypt_auth(&data)?;
+    serde_json::from_slice(&plaintext).ok()
+}
+
+fn save_tokens(tokens: &StoredTokens, app: &AppHandle) -> Result<(), String> {
+    let json      = serde_json::to_vec(tokens).map_err(|e| e.to_string())?;
+    let encrypted = encrypt_auth(&json);
+    fs::write(auth_path(app), encrypted).map_err(|e| e.to_string())
+}
+
+pub fn delete_tokens(app: &AppHandle) {
+    let _ = fs::remove_file(auth_path(app));
 }
 
 // ── OAuth callback server ─────────────────────────────────────────────────────
@@ -193,8 +252,6 @@ async fn fetch_email(client: &Client, access_token: &str) -> Result<String, Stri
 
 // ── Tauri commands ────────────────────────────────────────────────────────────
 
-/// Starts the full OAuth 2.0 PKCE flow. Opens the browser, waits for the
-/// redirect, exchanges the code, and stores the tokens. Returns the email.
 #[tauri::command]
 pub async fn google_auth_start(app: AppHandle) -> Result<String, String> {
     // PKCE: code verifier + SHA-256 challenge
@@ -259,7 +316,7 @@ pub async fn google_auth_start(app: AppHandle) -> Result<String, String> {
         email: email.clone(),
     };
 
-    save_tokens(&tokens)?;
+    save_tokens(&tokens, &app)?;
     *app.state::<GoogleAuthState>()
         .0
         .lock()
@@ -282,11 +339,92 @@ pub fn google_auth_status(app: AppHandle) -> Option<String> {
 /// Removes stored tokens and signs out.
 #[tauri::command]
 pub fn google_logout(app: AppHandle) -> Result<(), String> {
-    delete_tokens();
+    delete_tokens(&app);
     *app.state::<GoogleAuthState>()
         .0
         .lock()
         .map_err(|e| e.to_string())? = None;
+    Ok(())
+}
+
+// ── Drive import ─────────────────────────────────────────────────────────────
+
+#[derive(Serialize)]
+pub struct DriveVaultFile {
+    pub id: String,
+    pub name: String,
+    pub modified_time: String, // ISO 8601
+    pub size_bytes: u64,
+    pub revision: u64,
+}
+
+/// Lists all zorah-*.vault files in the user's Drive appDataFolder.
+#[tauri::command]
+pub async fn google_drive_list_vaults(app: AppHandle) -> Result<Vec<DriveVaultFile>, String> {
+    let mut tokens = app
+        .state::<GoogleAuthState>()
+        .0.lock().map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Not signed in to Google.")?;
+
+    let client = Client::new();
+    refresh_if_needed(&client, &mut tokens, &app).await?;
+    *app.state::<GoogleAuthState>().0.lock().map_err(|e| e.to_string())? = Some(tokens.clone());
+
+    let res: serde_json::Value = client
+        .get("https://www.googleapis.com/drive/v3/files")
+        .bearer_auth(&tokens.access_token)
+        .query(&[
+            ("spaces",   "appDataFolder"),
+            ("fields",   "files(id,name,modifiedTime,size,properties)"),
+            ("pageSize", "100"),
+        ])
+        .send().await.map_err(|e| e.to_string())?
+        .json().await.map_err(|e| e.to_string())?;
+
+    if let Some(err) = res["error"]["message"].as_str() {
+        return Err(format!("Drive list failed: {err}"));
+    }
+
+    let vaults = res["files"]
+        .as_array()
+        .ok_or("Invalid Drive response")?
+        .iter()
+        .filter_map(|f| {
+            let id   = f["id"].as_str()?;
+            let name = f["name"].as_str()?;
+            if name.starts_with("zorah-") && name.ends_with(".vault") {
+                let modified_time = f["modifiedTime"].as_str().unwrap_or("").to_string();
+                let size_bytes    = f["size"].as_str().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+                let revision      = f["properties"]["revision"].as_str().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+                Some(DriveVaultFile { id: id.to_string(), name: name.to_string(), modified_time, size_bytes, revision })
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    Ok(vaults)
+}
+
+/// Downloads a specific Drive vault file and saves it as the local vault.
+#[tauri::command]
+pub async fn google_drive_import_vault(app: AppHandle, file_id: String) -> Result<(), String> {
+    let mut tokens = app
+        .state::<GoogleAuthState>()
+        .0.lock().map_err(|e| e.to_string())?
+        .clone()
+        .ok_or("Not signed in to Google.")?;
+
+    let client = Client::new();
+    refresh_if_needed(&client, &mut tokens, &app).await?;
+    *app.state::<GoogleAuthState>().0.lock().map_err(|e| e.to_string())? = Some(tokens.clone());
+
+    let bytes = drive_download(&client, &tokens.access_token, &file_id).await?;
+    // Validate before overwriting
+    crate::crypto::EncryptedVault::from_bytes(&bytes)?;
+    let local_path = crate::vault::vault_path(&app);
+    fs::write(&local_path, bytes).map_err(|e| format!("Failed to save vault: {e}"))?;
     Ok(())
 }
 
@@ -299,7 +437,7 @@ pub struct SyncResult {
 }
 
 /// Refresh the access token if it expires within 60 seconds.
-async fn refresh_if_needed(client: &Client, tokens: &mut StoredTokens) -> Result<(), String> {
+async fn refresh_if_needed(client: &Client, tokens: &mut StoredTokens, app: &AppHandle) -> Result<(), String> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
@@ -325,7 +463,7 @@ async fn refresh_if_needed(client: &Client, tokens: &mut StoredTokens) -> Result
         .as_str().ok_or("Missing access_token")?.to_string();
     let expires_in = res["expires_in"].as_u64().unwrap_or(3600);
     tokens.expires_at = now + expires_in;
-    save_tokens(tokens)?;
+    save_tokens(tokens, app)?;
     Ok(())
 }
 
@@ -452,7 +590,7 @@ pub async fn google_drive_sync(app: AppHandle, vault_id: String) -> Result<SyncR
         .ok_or("Not signed in to Google.")?;
 
     let client = Client::new();
-    refresh_if_needed(&client, &mut tokens).await?;
+    refresh_if_needed(&client, &mut tokens, &app).await?;
     *app.state::<GoogleAuthState>().0.lock().map_err(|e| e.to_string())? = Some(tokens.clone());
 
     let token    = &tokens.access_token;

@@ -3,8 +3,11 @@ mod crypto;
 mod google;
 mod vault;
 
-use commands::{save_vault, set_toggle_shortcut, unlock_vault, vault_exists};
-use google::{google_auth_start, google_auth_status, google_drive_sync, google_logout, GoogleAuthState};
+use commands::{get_vault_dir, pick_and_import_vault, save_vault, set_toggle_shortcut, unlock_vault, vault_exists};
+use google::{
+    google_auth_start, google_auth_status, google_drive_import_vault, google_drive_list_vaults,
+    google_drive_sync, google_logout, GoogleAuthState,
+};
 use std::sync::Mutex;
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
@@ -116,8 +119,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
-            vault_exists, unlock_vault, save_vault, set_toggle_shortcut,
-            google_auth_start, google_auth_status, google_logout, google_drive_sync
+            vault_exists, get_vault_dir, unlock_vault, save_vault, set_toggle_shortcut, pick_and_import_vault,
+            google_auth_start, google_auth_status, google_logout, google_drive_sync,
+            google_drive_list_vaults, google_drive_import_vault
         ])
         .setup(|app| {
             let tray_handle = app.handle().clone();
@@ -135,7 +139,7 @@ pub fn run() {
             let shortcut = Shortcut::new(Some(Modifiers::ALT | Modifiers::SHIFT), Code::KeyP);
 
             app.manage(CurrentShortcut(Mutex::new(default_str)));
-            app.manage(GoogleAuthState(Mutex::new(google::load_tokens())));
+            app.manage(GoogleAuthState(Mutex::new(google::load_tokens(app.handle()))));
 
             let app_handle = app.handle().clone();
             app.global_shortcut().on_shortcut(shortcut, move |_app, _shortcut, event| {
